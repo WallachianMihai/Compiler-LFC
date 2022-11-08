@@ -15,6 +15,7 @@ for(int i = 0; i < 9; ++i)
 do
     while(true)
     do
+        /*this is a comment*/
         if(!false == true) // if(!false is true)/if(false is not true)/if(not true equals false)
         then
             a %= i;
