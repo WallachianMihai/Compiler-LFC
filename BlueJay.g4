@@ -57,7 +57,7 @@ for_stat
     ;
 
 for_condition_block
-    : OPAR (expr)? SCOL expr SCOL (expr)? CPAR
+    : OPAR ( (expr SCOL | declaration | assignment) | SCOL ) (expr | ID ASSIGN expr) SCOL (expr | ID ASSIGN expr)? CPAR
     ;
 
 
