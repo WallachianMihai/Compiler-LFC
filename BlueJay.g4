@@ -13,7 +13,7 @@ stat
     | inc SCOL
     | dec SCOL
     | assignment
-    | opAssign SCOL
+    | compound SCOL
     | if_stat
     | while_stat
     | for_stat
@@ -37,7 +37,7 @@ assignment
     : ID ASSIGN expr SCOL
     ;
 
-opAssign
+compound
     : ID (PASSIGN | MASSIGN | DIVASSIGN | MULTASSIGN | MODASSIGN) expr
     ;
 
@@ -72,7 +72,7 @@ for_stat
     ;
 
 for_condition_block
-    : OPAR ( (expr SCOL | declaration | assignment) | SCOL ) (expr | ID ASSIGN expr) SCOL (expr | ID ASSIGN expr | opAssign)? CPAR
+    : OPAR ( (expr SCOL | declaration | assignment) | SCOL ) (expr | ID ASSIGN expr) SCOL (expr | ID ASSIGN expr | compound)? CPAR
     ;
 
 
@@ -96,7 +96,7 @@ expr
     | expr AND expr                         //and expressions
     | expr OR expr                          //or expressions
     | atom                                  //instantaneous expression
-    | opAssign                              //operation assignment
+    | compound                              //compound assignment operators
     ;
 
 atom
