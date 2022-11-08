@@ -10,7 +10,10 @@ block
 
 stat
     : declaration
+    | inc SCOL
+    | dec SCOL
     | assignment
+    | compound SCOL
     | if_stat
     | while_stat
     | for_stat
@@ -22,8 +25,20 @@ declaration
     | DATA_TYPE ID ASSIGN expr SCOL
     ;
 
+inc
+    : (INCR ID | ID INCR)
+    ;
+
+dec
+    : (DECR ID | ID DECR)
+    ;
+
 assignment
     : ID ASSIGN expr SCOL
+    ;
+
+compound
+    : ID (PASSIGN | MASSIGN | DIVASSIGN | MULTASSIGN | MODASSIGN) expr
     ;
 
 
@@ -57,7 +72,7 @@ for_stat
     ;
 
 for_condition_block
-    : OPAR (expr)? SCOL expr SCOL (expr)? CPAR
+    : OPAR ( (expr SCOL | declaration | assignment) | SCOL ) (expr | ID ASSIGN expr) SCOL (expr | ID ASSIGN expr | compound)? CPAR
     ;
 
 
@@ -72,6 +87,8 @@ condition_block
 expr
     : MINUS expr                            //Unary minus operator
     | NOT expr                              //Unary not operator
+    | inc                                   //post and pre incrementation
+    | dec                                   //post and pre decrementation
     | expr op=(MULT | DIV | MOD) expr       //Multiplication/division/modulo expressions
     | expr op=(PLUS | MINUS) expr           //additive expressions
     | expr op=(LTEQ | GTEQ | LT | GT) expr  //relational expressions
@@ -79,34 +96,41 @@ expr
     | expr AND expr                         //and expressions
     | expr OR expr                          //or expressions
     | atom                                  //instantaneous expression
+    | compound                              //compound assignment operators
     ;
 
-atom :
-    OPAR expr CPAR
+atom
+    : OPAR expr CPAR
     | (INT_LITERAL | FLOAT_LITERAL | STRING_LITERAL) //literal values
     | (TRUE | FALSE)                                 //boolean values
     | ID                                             //identifier
     | NIL                                            //nil
     ;
 
-
 /* Tokens */
 OR : '||' | 'or';
 AND : '&&' | 'and';
 NOT : '!' | 'not';
-EQ : '==' | 'equals' | 'is';
 NEQ : '!=' | 'is not';
+EQ : '==' | 'equals' | 'is';
 GT : '>';
 LT : '<';
 GTEQ : '>=';
 LTEQ : '<=';
 PLUS : '+';
+INCR : '++';
 MINUS : '-';
+DECR : '--';
 MULT : '*';
 DIV : '/';
 MOD : '%';
 
 SCOL : ';';
+PASSIGN: '+=';
+MASSIGN: '-=';
+DIVASSIGN: '/=';
+MULTASSIGN: '*=';
+MODASSIGN: '%=';
 ASSIGN : '=';
 OPAR : '(';
 CPAR : ')';
