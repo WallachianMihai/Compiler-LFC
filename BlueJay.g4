@@ -1,6 +1,6 @@
 grammar BlueJay;
 
-parse
+program
     : block EOF
     ;
 
@@ -9,17 +9,14 @@ block
     ;
 
 stat
-    : declaration
-    | assignment
+    : assignment
+    | compoundAssignment SCOL
     | if_stat
     | while_stat
     | for_stat
+    | print
+    | incrDecr SCOL
     | OTHER {System.err.println("unknown identifier: " + $OTHER.text);}
-    ;
-
-declaration
-    : DATA_TYPE ID SCOL
-    | DATA_TYPE ID ASSIGN expr SCOL
     ;
 
 assignment
@@ -69,33 +66,51 @@ condition_block
     : OPAR expr CPAR
     ;
 
+print
+    : PRINT expr SCOL
+    ;
+
 expr
-    : MINUS expr                            //Unary minus operator
-    | NOT expr                              //Unary not operator
-    | expr op=(MULT | DIV | MOD) expr       //Multiplication/division/modulo expressions
-    | expr op=(PLUS | MINUS) expr           //additive expressions
-    | expr op=(LTEQ | GTEQ | LT | GT) expr  //relational expressions
-    | expr op=(EQ | NEQ) expr               //equality expressions
-    | expr AND expr                         //and expressions
-    | expr OR expr                          //or expressions
-    | atom                                  //instantaneous expression
+    : MINUS expr                                                            #minusExpr
+    | NOT expr                                                              #notExpr
+    | expr op=(MULT | DIV | MOD) expr                                       #multiplicationExpr
+    | expr op=(PLUS | MINUS) expr                                           #additiveExpr
+    | expr op=(LTEQ | GTEQ | LT | GT) expr                                  #relationalExpr
+    | expr op=(EQ | NEQ) expr                                               #equalityExpr
+    | expr AND expr                                                         #andExpr
+    | expr OR expr                                                          #orExpr
+    | compoundAssignment                                                    #compoundExpr
+    | atom                                                                  #atomExpr
+    | incrDecr                                                              #incrDecrExpr
     ;
 
 atom :
-    OPAR expr CPAR
-    | (INT_LITERAL | FLOAT_LITERAL | STRING_LITERAL) //literal values
-    | (TRUE | FALSE)                                 //boolean values
-    | ID                                             //identifier
-    | NIL                                            //nil
+    OPAR expr CPAR                                   #parExpr
+    | (INT_LITERAL | FLOAT_LITERAL)                  #numberAtom
+    | (TRUE | FALSE)                                 #booleanAtom
+    | ID                                             #idAtom
+    | STRING_LITERAL                                 #stringAtom
+    | NIL                                            #nilAtom
+    ;
+
+compoundAssignment
+    : ID op=(PLUSASSIGN | MODASSIGN | MINUSASSIGN | DIVASSIGN | MULTASSIGN) expr
+    ;
+
+incrDecr
+    : INC ID        #preInc
+    | ID INC        #postInc
+    | DEC ID        #preDec
+    | ID DEC        #postDec
     ;
 
 
 /* Tokens */
-OR : '||' | 'or';
-AND : '&&' | 'and';
-NOT : '!' | 'not';
-EQ : '==' | 'equals' | 'is';
-NEQ : '!=' | 'is not';
+OR : '||';
+AND : '&&';
+NOT : '!';
+EQ : '==';
+NEQ : '!=';
 GT : '>';
 LT : '<';
 GTEQ : '>=';
@@ -107,6 +122,13 @@ DIV : '/';
 MOD : '%';
 
 SCOL : ';';
+MODASSIGN : '%=';
+PLUSASSIGN : '+=';
+MINUSASSIGN : '-=';
+DIVASSIGN : '/=';
+MULTASSIGN : '*=';
+DEC : '--';
+INC : '++';
 ASSIGN : '=';
 OPAR : '(';
 CPAR : ')';
@@ -120,6 +142,7 @@ ELSE : 'else';
 THEN : 'then';
 FI : 'fi';
 WHILE : 'while';
+PRINT : 'print';
 FOR : 'for';
 DO : 'do';
 DONE : 'done';
