@@ -1,4 +1,5 @@
-import antlr.*;
+import BlueJay.BlueJayLexer;
+import BlueJay.BlueJayParser;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;

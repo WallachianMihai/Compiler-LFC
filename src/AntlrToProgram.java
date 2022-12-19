@@ -1,4 +1,6 @@
-import antlr.*;
+import BlueJay.BlueJayBaseVisitor;
+import BlueJay.BlueJayLexer;
+import BlueJay.BlueJayParser;
 import org.antlr.v4.runtime.misc.*;
 import java.util.List;
 import java.util.ArrayList;
@@ -126,13 +128,13 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
         switch(ctx.op.getType())
         {
             case BlueJayParser.LT:
-                return new Value(left.asFloatingPoint() * right.asFloatingPoint());
+                return new Value(left.asFloatingPoint() < right.asFloatingPoint());
             case BlueJayParser.LTEQ:
-                return new Value(left.asFloatingPoint() / right.asFloatingPoint());
+                return new Value(left.asFloatingPoint() <= right.asFloatingPoint());
             case BlueJayParser.GT:
-                return new Value(left.asFloatingPoint() % right.asFloatingPoint());
+                return new Value(left.asFloatingPoint() > right.asFloatingPoint());
             case BlueJayParser.GTEQ:
-                return new Value(left.asFloatingPoint() % right.asFloatingPoint());
+                return new Value(left.asFloatingPoint() >= right.asFloatingPoint());
             default:
                 throw new RuntimeException("unknown operator: " + ctx.op.getType());
         }
@@ -266,5 +268,54 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
         Value value = this.visit(ctx.expr());
         System.out.println(value.toString());
         return value;
+    }
+
+    @Override
+    public Value visitCondition_block(BlueJayParser.Condition_blockContext ctx) {
+        return this.visit(ctx.expr());
+    }
+
+    @Override
+    public Value visitIf_statement_block(BlueJayParser.If_statement_blockContext ctx) {
+        return this.visit(ctx.block());
+    }
+
+    @Override
+    public Value visitIf_condition_block(BlueJayParser.If_condition_blockContext ctx) {
+        if (this.visit(ctx.condition_block()).asBoolean())
+            return this.visit(ctx.if_statement_block());
+        return null;
+    }
+
+    @Override
+    public Value visitIf_stat(BlueJayParser.If_statContext ctx) {
+        boolean goOnElse = true;
+        for (BlueJayParser.If_condition_blockContext block : ctx.if_condition_block()) {
+            if (this.visit(block) != null)
+                goOnElse = false;
+        }
+        if (ctx.block() != null && goOnElse)
+            return this.visit(ctx.block());
+        return null;
+    }
+
+    @Override
+    public Value visitWhile_condition_block(BlueJayParser.While_condition_blockContext ctx) {
+        while (this.visit(ctx.condition_block()).asBoolean())
+            this.visit(ctx.loop_statement_block());
+        return null;
+    }
+
+    @Override
+    public Value visitWhile_stat(BlueJayParser.While_statContext ctx) {
+        return this.visit(ctx.while_condition_block());
+    }
+
+    @Override
+    public Value visitFor_condition_block(BlueJayParser.For_condition_blockContext ctx) {
+        if (ctx.assignment() != null)
+            this.visit(ctx.assignment());
+
+        return null;
     }
 }
