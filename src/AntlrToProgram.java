@@ -2,24 +2,33 @@ import BlueJay.BlueJayBaseVisitor;
 import BlueJay.BlueJayLexer;
 import BlueJay.BlueJayParser;
 import org.antlr.v4.runtime.misc.*;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
+
+import java.util.*;
 
 public class AntlrToProgram extends BlueJayBaseVisitor<Value>
 {
     public static final double SMALL_VALUE = 0.00000000001;
+    public static int CURRENT_DEPTH = 0;
     //1. duplicate declaration 2. reference to undeclared variables
     private List<String> semanticErrors = new ArrayList<>();
     private Map<String, Value> memory = new HashMap<String, Value>();
+    private Vector<Set<String>> depthMemory = new Vector<Set<String>>(0);
+
+    @Override
+    public Value visitProgram(BlueJayParser.ProgramContext ctx) {
+        depthMemory.add(0, new HashSet<String>());
+        return super.visitProgram(ctx);
+    }
 
     @Override
     public Value visitAssignment(BlueJayParser.AssignmentContext ctx)
     {
         String id = ctx.ID().getText();
         Value value = this.visit(ctx.expr());
-        return memory.put(id, value);
+        if (!memory.containsKey(id))
+            depthMemory.elementAt(CURRENT_DEPTH).add(id);
+        memory.put(id, value);
+        return value;
     }
 
     @Override
@@ -187,11 +196,9 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
             throw new RuntimeException("undefined symbol: " + id);
         }
         memory.put(id, new Value(memory.get(id).asFloatingPoint() - 1));
-        return new Value(memory.get(id));
+        return memory.get(id);
     }
 
-
-    // INCREMENTATION & DECREMENTATION
     @Override
     public Value visitPreInc(BlueJayParser.PreIncContext ctx)
     {
@@ -202,7 +209,7 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
             throw new RuntimeException("undefined symbol: " + id);
         }
         memory.put(id, new Value(memory.get(id).asFloatingPoint() + 1));
-        return this.visit(ctx.ID());
+        return memory.get(id);
     }
 
     @Override
@@ -214,8 +221,8 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
         {
             throw new RuntimeException("undefined symbol: " + id);
         }
-        memory.put(id, new Value(memory.get(id).asFloatingPoint() + 1));
-        return this.visit(ctx.ID());
+        memory.put(id, new Value(memory.get(id).asFloatingPoint() - 1));
+        return value;
     }
 
     @Override
@@ -228,7 +235,7 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
             throw new RuntimeException("undefined symbol: " + id);
         }
         memory.put(id, new Value(memory.get(id).asFloatingPoint() + 1));
-        return new Value(memory.get(id));
+        return value;
     }
 
     @Override
@@ -315,6 +322,20 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
     public Value visitFor_condition_block(BlueJayParser.For_condition_blockContext ctx) {
         if (ctx.assignment() != null)
             this.visit(ctx.assignment());
+
+        return null;
+    }
+
+    @Override
+    public Value visitBlock(BlueJayParser.BlockContext ctx) {
+        CURRENT_DEPTH++;
+        depthMemory.add(CURRENT_DEPTH, new HashSet<String>());
+        super.visitBlock(ctx);
+
+        for (String id : depthMemory.get(CURRENT_DEPTH))
+            memory.remove(id);
+        depthMemory.remove(CURRENT_DEPTH);
+        CURRENT_DEPTH--;
 
         return null;
     }
