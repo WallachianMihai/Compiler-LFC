@@ -254,24 +254,32 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
                {
                    memory.put(id, new Value(memory.get(id).asString() + value.asString()));
                }
+               break;
             case BlueJayParser.MINUSASSIGN:
                 memory.put(id, new Value(memory.get(id).asFloatingPoint() - value.asFloatingPoint()));
-
+                break;
             case BlueJayParser.MODASSIGN:
                 memory.put(id, new Value(memory.get(id).asFloatingPoint() % value.asFloatingPoint()));
-
+                break;
             case BlueJayParser.DIVASSIGN:
                 memory.put(id, new Value(memory.get(id).asFloatingPoint() / value.asFloatingPoint()));
-
+                break;
             case BlueJayParser.MULTASSIGN:
                 memory.put(id, new Value(memory.get(id).asFloatingPoint() * value.asFloatingPoint()));
+                break;
         }
         return this.visit(ctx.ID());
     }
 
     @Override
-    public Value visitPrint(BlueJayParser.PrintContext ctx)
-    {
+    public Value visitPrintValue(BlueJayParser.PrintValueContext ctx) {
+        Value value = this.visit(ctx.expr());
+        System.out.print(value.toString());
+        return value;
+    }
+
+    @Override
+    public Value visitPrintNewLine(BlueJayParser.PrintNewLineContext ctx) {
         Value value = this.visit(ctx.expr());
         System.out.println(value.toString());
         return value;
@@ -319,11 +327,25 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
     }
 
     @Override
-    public Value visitFor_condition_block(BlueJayParser.For_condition_blockContext ctx) {
-        if (ctx.assignment() != null)
-            this.visit(ctx.assignment());
-
+    public Value visitFor_stat(BlueJayParser.For_statContext ctx) {
+        while (this.visit(ctx.for_condition_block()).asBoolean()) {
+            this.visit(ctx.loop_statement_block());
+            this.visit(ctx.for_condition_block().expr(1));
+        }
         return null;
+    }
+
+    @Override
+    public Value visitFor_condition_block(BlueJayParser.For_condition_blockContext ctx) {
+        if (ctx.assignment() != null && !memory.containsKey(ctx.assignment().ID().getText())) {
+            this.visit(ctx.assignment());
+        }
+        return this.visit(ctx.expr(0));
+    }
+
+    @Override
+    public Value visitLoop_statement_block(BlueJayParser.Loop_statement_blockContext ctx) {
+        return this.visit(ctx.block());
     }
 
     @Override
@@ -339,4 +361,6 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
 
         return null;
     }
+
+
 }

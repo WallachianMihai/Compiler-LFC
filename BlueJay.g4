@@ -67,7 +67,8 @@ condition_block
     ;
 
 print
-    : PRINT expr SCOL
+    : PRINTLN expr SCOL                             #printNewLine
+    | PRINT expr SCOL                               #printValue
     ;
 
 expr
@@ -143,6 +144,7 @@ THEN : 'then';
 FI : 'fi';
 WHILE : 'while';
 PRINT : 'print';
+PRINTLN : 'println';
 FOR : 'for';
 DO : 'do';
 DONE : 'done';
