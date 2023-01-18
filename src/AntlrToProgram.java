@@ -44,8 +44,12 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
     }
 
     @Override
-    public Value visitNumberAtom(BlueJayParser.NumberAtomContext ctx)
-    {
+    public Value visitIntegerAtom(BlueJayParser.IntegerAtomContext ctx) {
+        return new Value(Integer.valueOf(ctx.getText()));
+    }
+
+    @Override
+    public Value visitFloatAtom(BlueJayParser.FloatAtomContext ctx) {
         return new Value(Double.valueOf(ctx.getText()));
     }
 
@@ -87,6 +91,9 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
     public Value visitMinusExpr(BlueJayParser.MinusExprContext ctx)
     {
         Value value = this.visit(ctx.expr());
+        // TODO: value is string
+        if (value.isInteger())
+            return new Value(-value.asInteger());
         return new Value(-value.asFloatingPoint());
     }
 
@@ -99,10 +106,16 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
         switch(ctx.op.getType())
         {
             case BlueJayParser.MULT:
+                if (left.isInteger() && right.isInteger())
+                    return new Value(left.asInteger() * right.asInteger());
                 return new Value(left.asFloatingPoint() * right.asFloatingPoint());
             case BlueJayParser.DIV:
+                if (left.isInteger() && right.isInteger())
+                    return new Value(left.asInteger() / right.asInteger());
                 return new Value(left.asFloatingPoint() / right.asFloatingPoint());
             case BlueJayParser.MOD:
+                if (left.isInteger() && right.isInteger())
+                    return new Value(left.asInteger() % right.asInteger());
                 return new Value(left.asFloatingPoint() % right.asFloatingPoint());
             default:
                 throw new RuntimeException("unknown operator: " + BlueJayParser.tokenNames[ctx.op.getType()]);
@@ -118,11 +131,17 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
         switch(ctx.op.getType())
         {
             case BlueJayParser.PLUS:
+                if (left.isInteger() && right.isInteger())
+                    return new Value(left.asInteger() + right.asInteger());
+                if ((left.isInteger() && right.isDouble()) || (left.isDouble() && right.isInteger()))
+                    return new Value(left.asFloatingPoint() + right.asFloatingPoint());
                 return left.isDouble() && right.isDouble() ?
                         new Value(left.asFloatingPoint() + right.asFloatingPoint()) :
                         new Value(left.asString() + right.asString());
             case BlueJayParser.MINUS:
-                return new Value(left.asFloatingPoint() / right.asFloatingPoint());
+                if (left.isInteger() && right.isInteger())
+                    return new Value(left.asInteger() - right.asInteger());
+                return new Value(left.asFloatingPoint() - right.asFloatingPoint());
             default:
                 throw new RuntimeException("unknown operator: " + BlueJayParser.tokenNames[ctx.op.getType()]);
         }
@@ -158,6 +177,11 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
         switch (ctx.op.getType())
         {
             case BlueJayParser.EQ:
+                if (left.isInteger() && right.isInteger())
+                    return left.asInteger() == right.asInteger() ? new Value(true) : new Value(false);
+                if ((left.isInteger() && right.isDouble()) || (left.isDouble() && right.isInteger()))
+                    return Objects.equals(right.asFloatingPoint(), left.asFloatingPoint()) ?
+                            new Value(true) : new Value(false);
                 return left.isDouble() && right.isDouble() ?
                         new Value(Math.abs(left.asFloatingPoint() - right.asFloatingPoint()) < SMALL_VALUE) :
                         new Value(left.equals(right));
@@ -297,8 +321,10 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
 
     @Override
     public Value visitIf_condition_block(BlueJayParser.If_condition_blockContext ctx) {
-        if (this.visit(ctx.condition_block()).asBoolean())
-            return this.visit(ctx.if_statement_block());
+        if (this.visit(ctx.condition_block()).asBoolean()) {
+            this.visit(ctx.if_statement_block());
+            return new Value(true);
+        }
         return null;
     }
 

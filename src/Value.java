@@ -22,12 +22,27 @@ public class Value
 
     public Double asFloatingPoint()
     {
+        if (value instanceof Integer)
+            return ((Integer)value).doubleValue();
         return (Double)value;
     }
 
     public boolean isDouble()
     {
         return value instanceof Double;
+    }
+
+    public int asInteger() {
+        Integer a;
+        return (Integer)value;
+    }
+
+    public boolean isInteger() {
+        return value instanceof Integer;
+    }
+
+    public Object asObject() {
+        return value;
     }
 
     @Override
@@ -51,4 +66,5 @@ public class Value
     {
         return String.valueOf(value);
     }
+
 }

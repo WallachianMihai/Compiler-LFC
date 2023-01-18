@@ -87,7 +87,8 @@ expr
 
 atom :
     OPAR expr CPAR                                   #parExpr
-    | (INT_LITERAL | FLOAT_LITERAL)                  #numberAtom
+    | INT_LITERAL                                    #integerAtom
+    | FLOAT_LITERAL                                  #floatAtom
     | (TRUE | FALSE)                                 #booleanAtom
     | ID                                             #idAtom
     | STRING_LITERAL                                 #stringAtom
@@ -171,6 +172,7 @@ INT_LITERAL
 FLOAT_LITERAL
         : '0' '.f'?
         | '-'? [1-9][0-9]* '.' [0-9]* 'f'?
+        | '-'? [0] '.' [0-9][0-9]*
         | '-'? [1-9][0-9]* '.f'?;
 
 STRING_LITERAL
