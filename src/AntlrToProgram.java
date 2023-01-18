@@ -186,6 +186,11 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
                         new Value(Math.abs(left.asFloatingPoint() - right.asFloatingPoint()) < SMALL_VALUE) :
                         new Value(left.equals(right));
             case BlueJayLexer.NEQ:
+                if (left.isInteger() && right.isInteger())
+                    return left.asInteger() != right.asInteger() ? new Value(true) : new Value(false);
+                if ((left.isInteger() && right.isDouble()) || (left.isDouble() && right.isInteger()))
+                    return !Objects.equals(right.asFloatingPoint(), left.asFloatingPoint()) ?
+                            new Value(true) : new Value(false);
                 return left.isDouble() && right.isDouble() ?
                         new Value(Math.abs(left.asFloatingPoint() - right.asFloatingPoint()) >= SMALL_VALUE) :
                         new Value(!left.equals(right));
@@ -219,7 +224,10 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
         {
             throw new RuntimeException("undefined symbol: " + id);
         }
-        memory.put(id, new Value(memory.get(id).asFloatingPoint() - 1));
+        if (value.isInteger())
+            memory.put(id, new Value(value.asInteger() - 1));
+        else
+            memory.put(id, new Value(value.asFloatingPoint() - 1));
         return memory.get(id);
     }
 
@@ -232,7 +240,10 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
         {
             throw new RuntimeException("undefined symbol: " + id);
         }
-        memory.put(id, new Value(memory.get(id).asFloatingPoint() + 1));
+        if (value.isInteger())
+            memory.put(id, new Value(value.asInteger() + 1));
+        else
+            memory.put(id, new Value(value.asFloatingPoint() + 1));
         return memory.get(id);
     }
 
@@ -245,7 +256,10 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
         {
             throw new RuntimeException("undefined symbol: " + id);
         }
-        memory.put(id, new Value(memory.get(id).asFloatingPoint() - 1));
+        if (value.isInteger())
+            memory.put(id, new Value(value.asInteger() - 1));
+        else
+            memory.put(id, new Value(value.asFloatingPoint() - 1));
         return value;
     }
 
@@ -258,7 +272,10 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
         {
             throw new RuntimeException("undefined symbol: " + id);
         }
-        memory.put(id, new Value(memory.get(id).asFloatingPoint() + 1));
+        if (value.isInteger())
+            memory.put(id, new Value(value.asInteger() + 1));
+        else
+            memory.put(id, new Value(value.asFloatingPoint() + 1));
         return value;
     }
 
@@ -270,26 +287,60 @@ public class AntlrToProgram extends BlueJayBaseVisitor<Value>
         switch (ctx.op.getType())
         {
             case BlueJayParser.PLUSASSIGN:
-               if(value.isDouble())
-               {
+                if (value.isInteger()) {
+                    if (memory.get(id).isInteger())
+                        memory.put(id, new Value(memory.get(id).asInteger() + value.asInteger()));
+                    else if (memory.get(id).isDouble())
+                        memory.put(id, new Value(memory.get(id).asFloatingPoint() + value.asInteger()));
+                }
+                else if(value.isDouble())
+                {
                    memory.put(id, new Value(memory.get(id).asFloatingPoint() + value.asFloatingPoint()));
-               }
-               else
-               {
+                }
+                else
+                {
                    memory.put(id, new Value(memory.get(id).asString() + value.asString()));
-               }
+                }
                break;
             case BlueJayParser.MINUSASSIGN:
-                memory.put(id, new Value(memory.get(id).asFloatingPoint() - value.asFloatingPoint()));
+                if (value.isInteger()) {
+                    if (memory.get(id).isInteger())
+                        memory.put(id, new Value(memory.get(id).asInteger() - value.asInteger()));
+                    else if (memory.get(id).isDouble())
+                        memory.put(id, new Value(memory.get(id).asFloatingPoint() - value.asInteger()));
+                }
+                else
+                    memory.put(id, new Value(memory.get(id).asFloatingPoint() - value.asFloatingPoint()));
                 break;
             case BlueJayParser.MODASSIGN:
-                memory.put(id, new Value(memory.get(id).asFloatingPoint() % value.asFloatingPoint()));
+                if (value.isInteger()) {
+                    if (memory.get(id).isInteger())
+                        memory.put(id, new Value(memory.get(id).asInteger() % value.asInteger()));
+                    else if (memory.get(id).isDouble())
+                        memory.put(id, new Value(memory.get(id).asFloatingPoint() % value.asInteger()));
+                }
+                else
+                    memory.put(id, new Value(memory.get(id).asFloatingPoint() % value.asFloatingPoint()));
                 break;
             case BlueJayParser.DIVASSIGN:
-                memory.put(id, new Value(memory.get(id).asFloatingPoint() / value.asFloatingPoint()));
+                if (value.isInteger()) {
+                    if (memory.get(id).isInteger())
+                        memory.put(id, new Value(memory.get(id).asInteger() / value.asInteger()));
+                    else if (memory.get(id).isDouble())
+                        memory.put(id, new Value(memory.get(id).asFloatingPoint() / value.asInteger()));
+                }
+                else
+                    memory.put(id, new Value(memory.get(id).asFloatingPoint() / value.asFloatingPoint()));
                 break;
             case BlueJayParser.MULTASSIGN:
-                memory.put(id, new Value(memory.get(id).asFloatingPoint() * value.asFloatingPoint()));
+                if (value.isInteger()) {
+                    if (memory.get(id).isInteger())
+                        memory.put(id, new Value(memory.get(id).asInteger() * value.asInteger()));
+                    else if (memory.get(id).isDouble())
+                        memory.put(id, new Value(memory.get(id).asFloatingPoint() * value.asInteger()));
+                }
+                else
+                    memory.put(id, new Value(memory.get(id).asFloatingPoint() * value.asFloatingPoint()));
                 break;
         }
         return this.visit(ctx.ID());
